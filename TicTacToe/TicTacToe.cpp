@@ -113,11 +113,88 @@ bool checkWinCondition(char** board, int SIZEX, int SIZEY, char markPlayed)
     return false;
 }
 
-void computerPlayer()
+bool isBoardFilled(char** board, int SIZEX, int SIZEY)
 {
-
+    for (int i = 0; i < SIZEY; i++)
+        for (int j = 0; j < SIZEX; j++)
+            if (board[i][j] == ' ')
+                return false;
+    return true;
 }
 
+int minimax(char** board, int SIZEX, int SIZEY, int depth, bool maximizingPlayer)
+{
+    if (checkWinCondition(board, SIZEX, SIZEY, 'X'))
+        return 1;
+    else if (checkWinCondition(board, SIZEX, SIZEY, 'O'))
+        return -1;
+    else if (isBoardFilled(board, SIZEX, SIZEY))
+        return 0;
+
+    if (maximizingPlayer)
+    {
+        int bestScore = -INT_MAX;
+        for (int i = 0; i < SIZEY; i++)
+        {
+            for (int j = 0; j < SIZEX; j++)
+            {
+                if (board[i][j] == ' ')
+                {
+                    board[i][j] = 'X';
+                    int score = minimax(board, SIZEX, SIZEY, depth + 1, false);
+                    board[i][j] = ' ';
+                    bestScore = max(score, bestScore);
+                }
+
+            }
+        }
+        return bestScore;
+    }
+    else
+    {
+        int bestScore = INT_MAX;
+        for (int i = 0; i < SIZEY; i++)
+        {
+            for (int j = 0; j < SIZEX; j++)
+            {
+                if (board[i][j] == ' ')
+                {
+                    board[i][j] = 'O';
+                    int score = minimax(board, SIZEX, SIZEY, depth + 1, true);
+                    board[i][j] = ' ';
+                    bestScore = min(score, bestScore);
+                }
+            }
+        }
+        return bestScore;
+    }
+}
+
+
+void bestMove(char** board, int SIZEX, int SIZEY, int markPlayed)
+{
+    int bestScore = -INT_MAX;
+    int bestMove[2] = { 0, 0 };
+    for (int i = 0; i < SIZEY; i++)
+    {
+        for (int j = 0; j < SIZEX; j++)
+        {
+            if (board[i][j] == ' ')
+            {
+                board[i][j] = markPlayed;
+                int score = minimax(board, SIZEX, SIZEY, 0, false);
+                board[i][j] = ' ';
+                if (score > bestScore)
+                {
+                    bestScore = score;
+                    bestMove[0] = j;
+                    bestMove[1] = i;
+                }
+            }
+        }
+    }
+    board[bestMove[1]][bestMove[0]] = markPlayed;
+}
 
 int main()
 {
@@ -164,12 +241,14 @@ int main()
 
     displayBoard(board, SIZEX, SIZEY);
 
-    while (!checkWinCondition(board, SIZEX, SIZEY, 'X') && !checkWinCondition(board, SIZEX, SIZEY, 'O'))
+    while (!checkWinCondition(board, SIZEX, SIZEY, 'X') && !checkWinCondition(board, SIZEX, SIZEY, 'O') && !isBoardFilled(board, SIZEX, SIZEY))
     {
-        cout << "Player 1 goes x y: ";
-        cin >> player1MoveX;
-        cin >> player1MoveY;
-        board[player1MoveY][player1MoveX] = 'X';
+        cout << "AI goes";
+        bestMove(board, SIZEX, SIZEY, 'X');
+        cout << endl;
+        //cin >> player1MoveX;
+        //cin >> player1MoveY;
+        //board[player1MoveY][player1MoveX] = 'X';
         if (checkWinCondition(board, SIZEX, SIZEY, 'X'))
             break;
 
@@ -177,9 +256,11 @@ int main()
         displayBoard(board, SIZEX, SIZEY);
         cout << endl;
 
-        cout << "Player 2 goes: ";
+        cout << "Player 2 goes x y: ";
         cin >> player2MoveX;
         cin >> player2MoveY;
+        if (player2MoveX == 'q' || player2MoveY == 'q')
+            break;
         board[player2MoveY][player2MoveX] = 'O';
         if (checkWinCondition(board, SIZEX, SIZEY, 'O'))
             break;
