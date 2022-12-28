@@ -122,13 +122,19 @@ bool isBoardFilled(char** board, int SIZEX, int SIZEY)
     return true;
 }
 
-int minimax(char** board, int SIZEX, int SIZEY, int depth, bool maximizingPlayer)
+int minimax(char** board, int SIZEX, int SIZEY, int depth, bool maximizingPlayer, char markMaximizing, int difficulty)
 {
-    if (checkWinCondition(board, SIZEX, SIZEY, 'X'))
+    char notMaximizing = ' ';
+    if (markMaximizing == 'X')
+        notMaximizing = 'O';
+    else
+        notMaximizing = 'X';
+
+    if (checkWinCondition(board, SIZEX, SIZEY, markMaximizing))
         return 1;
-    else if (checkWinCondition(board, SIZEX, SIZEY, 'O'))
+    else if (checkWinCondition(board, SIZEX, SIZEY, notMaximizing))
         return -1;
-    else if (isBoardFilled(board, SIZEX, SIZEY))
+    else if (isBoardFilled(board, SIZEX, SIZEY) || depth == difficulty)
         return 0;
 
     if (maximizingPlayer)
@@ -140,8 +146,8 @@ int minimax(char** board, int SIZEX, int SIZEY, int depth, bool maximizingPlayer
             {
                 if (board[i][j] == ' ')
                 {
-                    board[i][j] = 'X';
-                    int score = minimax(board, SIZEX, SIZEY, depth + 1, false);
+                    board[i][j] = markMaximizing;
+                    int score = minimax(board, SIZEX, SIZEY, depth + 1, false, markMaximizing, difficulty);
                     board[i][j] = ' ';
                     bestScore = max(score, bestScore);
                 }
@@ -159,8 +165,8 @@ int minimax(char** board, int SIZEX, int SIZEY, int depth, bool maximizingPlayer
             {
                 if (board[i][j] == ' ')
                 {
-                    board[i][j] = 'O';
-                    int score = minimax(board, SIZEX, SIZEY, depth + 1, true);
+                    board[i][j] = notMaximizing;
+                    int score = minimax(board, SIZEX, SIZEY, depth + 1, true, markMaximizing, difficulty);
                     board[i][j] = ' ';
                     bestScore = min(score, bestScore);
                 }
@@ -171,7 +177,7 @@ int minimax(char** board, int SIZEX, int SIZEY, int depth, bool maximizingPlayer
 }
 
 
-void bestMove(char** board, int SIZEX, int SIZEY, int markPlayed)
+void bestMove(char** board, int SIZEX, int SIZEY, int markPlayed, int difficulty)
 {
     int bestScore = -INT_MAX;
     int bestMove[2] = { 0, 0 };
@@ -182,7 +188,7 @@ void bestMove(char** board, int SIZEX, int SIZEY, int markPlayed)
             if (board[i][j] == ' ')
             {
                 board[i][j] = markPlayed;
-                int score = minimax(board, SIZEX, SIZEY, 0, false);
+                int score = minimax(board, SIZEX, SIZEY, 0, false, markPlayed, difficulty);
                 board[i][j] = ' ';
                 if (score > bestScore)
                 {
@@ -201,12 +207,28 @@ int main()
     int SIZEX = 3;
     int SIZEY = 3;
     int userDifficulty = 2;
+    int userPlayer = 1;
+    char userMark = 'O';
+    char computerMark = 'X';
 
     cout << "Enter size of board (length): ";
     cin >> SIZEX;
     cout << endl << "Enter size of board (height): ";
     cin >> SIZEY;
     cout << endl;
+    cout << "Do you want to be player 1 (X) or player 2 (O)? Type 1 or 2: ";
+    cin >> userPlayer;
+
+    if (userPlayer == 1)
+    {
+        userMark = 'X';
+        computerMark = 'O';
+    }
+    else
+    {
+        userMark = 'O';
+        computerMark = 'X';
+    }
 
     char** board;
     board = new char* [SIZEX];
@@ -232,10 +254,9 @@ int main()
 
 
 
-    int player1MoveX = 0;
-    int player1MoveY = 0;
-    int player2MoveX = 0;
-    int player2MoveY = 0;
+    int playerMoveX = 0;
+    int playerMoveY = 0;
+
     cout << "Player 1 is X" << endl << "Player 2 is O" << endl;
     cout << "Enter x,y coordinates. 0,0 is top left. X increases to the right. Y increases downwards" << endl;
 
@@ -243,40 +264,92 @@ int main()
 
     while (!checkWinCondition(board, SIZEX, SIZEY, 'X') && !checkWinCondition(board, SIZEX, SIZEY, 'O') && !isBoardFilled(board, SIZEX, SIZEY))
     {
-        cout << "AI goes";
-        bestMove(board, SIZEX, SIZEY, 'X');
-        cout << endl;
-        //cin >> player1MoveX;
-        //cin >> player1MoveY;
-        //board[player1MoveY][player1MoveX] = 'X';
-        if (checkWinCondition(board, SIZEX, SIZEY, 'X'))
-            break;
+        if (userPlayer == 1)
+        {
+            cout << "Player 1 goes x y: ";
+            cin >> playerMoveX;
+            cin >> playerMoveY;
+            board[playerMoveY][playerMoveX] = userMark;
+            cout << endl;
 
-        cout << endl;
-        displayBoard(board, SIZEX, SIZEY);
-        cout << endl;
+            if (playerMoveX == 'q' || playerMoveY == 'q')
+                break;
 
-        cout << "Player 2 goes x y: ";
-        cin >> player2MoveX;
-        cin >> player2MoveY;
-        if (player2MoveX == 'q' || player2MoveY == 'q')
-            break;
-        board[player2MoveY][player2MoveX] = 'O';
-        if (checkWinCondition(board, SIZEX, SIZEY, 'O'))
-            break;
+            if (checkWinCondition(board, SIZEX, SIZEY, userMark))
+            {
+                cout << "Player 1 Wins!" << endl << endl;
+                displayBoard(board, SIZEX, SIZEY);
+                break;
+            }
+            else if (isBoardFilled(board, SIZEX, SIZEY))
+            {
+                cout << "Draw!" << endl << endl;
+                displayBoard(board, SIZEX, SIZEY);
+                break;
+            }
 
-        displayBoard(board, SIZEX, SIZEY);
-        cout << endl;
+            displayBoard(board, SIZEX, SIZEY);
+            cout << "AI goes." << endl;
+            bestMove(board, SIZEX, SIZEY, computerMark, userDifficulty + 2);
+            cout << endl;
+
+            if (checkWinCondition(board, SIZEX, SIZEY, computerMark))
+            {
+                cout << "The AI Wins!" << endl << endl;
+                displayBoard(board, SIZEX, SIZEY);
+                break;
+            }
+            else if (isBoardFilled(board, SIZEX, SIZEY))
+            {
+                cout << "Draw!" << endl << endl;
+                displayBoard(board, SIZEX, SIZEY);
+                break;
+            }
+
+            cout << endl;
+            displayBoard(board, SIZEX, SIZEY);
+            cout << endl;
+        }
+        else
+        {
+            cout << "AI goes";
+            bestMove(board, SIZEX, SIZEY, 'X', userDifficulty + 2);
+            cout << endl;
+            if (checkWinCondition(board, SIZEX, SIZEY, 'X'))
+            {
+                break;
+            }
+            else if (isBoardFilled(board, SIZEX, SIZEY))
+            {
+                cout << "Draw!" << endl << endl;
+                displayBoard(board, SIZEX, SIZEY);
+                break;
+            }
+
+            cout << endl;
+            displayBoard(board, SIZEX, SIZEY);
+            cout << endl;
+
+            cout << "Player 2 goes x y: ";
+            cin >> playerMoveX;
+            cin >> playerMoveY;
+            if (playerMoveX == 'q' || playerMoveY == 'q')
+                break;
+            board[playerMoveY][playerMoveX] = 'O';
+            if (checkWinCondition(board, SIZEX, SIZEY, 'O'))
+            {
+                break;
+            }
+            else if (isBoardFilled(board, SIZEX, SIZEY))
+            {
+                cout << "Draw!" << endl << endl;
+                displayBoard(board, SIZEX, SIZEY);
+                break;
+            }
+            displayBoard(board, SIZEX, SIZEY);
+            cout << endl;
+        }
     }
-    
-
-    displayBoard(board, SIZEX, SIZEY);
-    cout << endl << endl;
-
-    if (checkWinCondition(board, SIZEX, SIZEY, 'X'))
-        cout << "Player 1 wins!" << endl;
-    else
-        cout << "Player 2 wins!" << endl;
 
     return 0;
 }
